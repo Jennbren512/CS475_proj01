@@ -17,9 +17,9 @@ const float VMIN = 20.0, VMAX = 30.0;
 const float THMIN = 70.0, THMAX = 80.0;
 const float GRAVITY = -9.8;
 const float TOL = 5.0;
-const int NUMTRIES = 30;
 
-// Random float generator
+const int NUMTRIES = 50;
+
 float Ranf(float low, float high)
 {
     float r = (float)rand();
@@ -27,7 +27,6 @@ float Ranf(float low, float high)
     return low + t * (high - low);
 }
 
-// Random int generator
 int Ranf(int ilow, int ihigh)
 {
     float low = (float)ilow;
@@ -35,7 +34,6 @@ int Ranf(int ilow, int ihigh)
     return (int)Ranf(low, high);
 }
 
-// Time seed for randomness
 void TimeOfDaySeed()
 {
     time_t now;
@@ -52,7 +50,6 @@ void TimeOfDaySeed()
     srand(seed);
 }
 
-// Degree to Radians
 inline float Radians(float degrees)
 {
     return (F_PI / 180.f) * degrees;
@@ -67,18 +64,23 @@ int main()
 
     TimeOfDaySeed();
 
+    // Final thread and trial configs:
     int threadCounts[] = {1, 2, 4, 6, 8};
-    int trialCounts[] = {100, 1000, 10000, 50000, 100000};
+    int trialCounts[] = {1000, 10000, 50000, 100000, 200000, 300000, 400000, 500000};
 
     std::ofstream csvFile("simulation_results.csv");
     csvFile << "Threads,Trials,MegaTrialsPerSecond\n";
 
-    for (int t = 0; t < sizeof(threadCounts)/sizeof(int); t++)
+    // Optional: anchor chart with dummy zero points
+    for (int i = 0; i < sizeof(threadCounts) / sizeof(int); i++)
+        csvFile << threadCounts[i] << ",0,0.0\n";
+
+    for (int t = 0; t < sizeof(threadCounts) / sizeof(int); t++)
     {
         int numThreads = threadCounts[t];
         omp_set_num_threads(numThreads);
 
-        for (int tr = 0; tr < sizeof(trialCounts)/sizeof(int); tr++)
+        for (int tr = 0; tr < sizeof(trialCounts) / sizeof(int); tr++)
         {
             int NUMTRIALS = trialCounts[tr];
 
@@ -116,7 +118,7 @@ int main()
                     float h = hs[n];
                     float d = ds[n];
 
-                    float t_flight = (-vy / (0.5 * GRAVITY));
+                    float t_flight = -vy / (0.5 * GRAVITY);
                     float x = vx * t_flight;
                     if (x <= g) continue;
 
@@ -127,12 +129,12 @@ int main()
                     float A = 0.5 * GRAVITY;
                     float B = vy;
                     float C = -h;
-                    float disc = B * B - 4. * A * C;
+                    float disc = B * B - 4.f * A * C;
                     if (disc < 0.) continue;
 
-                    float t1 = (-B + sqrt(disc)) / (2. * A);
-                    float t2 = (-B - sqrt(disc)) / (2. * A);
-                    float tmax = t1 > t2 ? t1 : t2;
+                    float t1 = (-B + sqrtf(disc)) / (2.f * A);
+                    float t2 = (-B - sqrtf(disc)) / (2.f * A);
+                    float tmax = fmaxf(t1, t2);
                     float upperDist = vx * tmax - g;
 
                     if (fabs(upperDist - d) <= TOL)
